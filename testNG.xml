@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Running Testcases on firefox Browser"  preserve-order="true">
+ <parameter name="BrowserType" value="firefox"/>
+ 	<test name="TC001_InitialSetup">
+    	<classes>
+	     	 <class name="regressionTestCases.TC001_GoogleTest"/>
+		</classes>																				
+	</test> 
+		
+		<test name="TC002_FaceBook_Test">
+    	<classes>
+	     	 <class name="regressionTestCases.TC002_FaceBook_Test"/>
+		</classes>																				
+	</test> 	
+
+</suite> <!-- Running Testcases on firefox Browser-->
