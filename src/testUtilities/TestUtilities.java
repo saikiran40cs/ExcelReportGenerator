@@ -185,14 +185,24 @@ public class TestUtilities {
 		int cols = xls.getColCountForParticularRow(Address_DataSheet_Constants.TestData_WORKSHEET,rows);
 		int headerName=rows+1;
 		int headerValue=rows+2;
+
+//		System.out.println("Row number found: "+rows);
+//		System.out.println("Col number found: "+cols);
+		
+		
 		
 		String[][] TDataFields = new String[1][cols];
 		for(int colNumber=0;colNumber<cols;colNumber++){
 			if(!xls.getCellData(Address_DataSheet_Constants.TestData_WORKSHEET, colNumber, headerName).equals("")){
-				TDataFields[0][colNumber]=xls.getCellData(Address_DataSheet_Constants.TestData_WORKSHEET, colNumber, headerValue);
+//			System.out.println("Header Name: "+xls.getCellData(Address_DataSheet_Constants.TestData_WORKSHEET, colNumber,headerName ));
+//			System.out.println("Header Value: "+xls.getCellData(Address_DataSheet_Constants.TestData_WORKSHEET, colNumber, headerValue));
+			TDataFields[0][colNumber]=xls.getCellData(Address_DataSheet_Constants.TestData_WORKSHEET, colNumber, headerValue);
 			}
 		}
 		return TDataFields;		
 	}	
+	
+	
 		
+	
 }

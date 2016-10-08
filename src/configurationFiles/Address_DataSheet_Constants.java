@@ -1,6 +1,9 @@
 package configurationFiles;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class Address_DataSheet_Constants {
 
@@ -48,5 +51,9 @@ public class Address_DataSheet_Constants {
 	public static String RUN_ON_OPERA = "RunOnOpera";
 	public static String RUN_ON_HEADLESS = "RunOnHeadless";
 	public static String YES="Y";
+	/*
+	 * Reports Worksheet
+	 */
+	public static final String REP_INPUT_FILE=System.getProperty("user.dir")+File.separator+"ExtentReports"+File.separator+ "TADVV_ExecutionStatus_"+new SimpleDateFormat("ddMMMyyyy",Locale.ENGLISH).format(new Date())+".xlsx";
 
 }

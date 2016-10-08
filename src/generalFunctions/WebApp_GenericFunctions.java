@@ -16,6 +16,7 @@ import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -25,10 +26,20 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
+import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
@@ -58,6 +69,7 @@ import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Optional;
 import org.testng.annotations.Parameters;
+import org.xml.sax.SAXException;
 
 import com.relevantcodes.extentreports.ExtentReports;
 import com.relevantcodes.extentreports.ExtentTest;
@@ -80,11 +92,210 @@ public class WebApp_GenericFunctions {
 	public String GetApplicationName;
 	public ExtentReports extent;
 	public ExtentTest test;
+	public String ExecutionStartTime,ExecutionEndTime;
 	public String getCurrentlyLoggedInUser;
+	// Create an Report in excel
+	XSSFWorkbook book = new XSSFWorkbook();
+	String sheetName ="TestSuite Report";
+	int rowNum;
+
 
 	@BeforeSuite
-	public void CreateErrorRepFolder(){
-		CONSTANTS.ScreenshotsPath=CONSTANTS.ScreenshotsPath+CONSTANTS.Dateformat;
+	/**
+	 * Function to change the Error Screenshot folder name before the Suite starts
+	 * @author saikiran.nataraja
+	 */
+	public void CreateErrorRepFolder() throws ParserConfigurationException, SAXException, IOException{
+		CONSTANTS.ScreenshotsPath=CONSTANTS.ScreenshotsPath+CONSTANTS.Dateformat+"ErrorScreenshots";
+		initializeExcelReport();
+	}
+
+	/**
+	 * Function to generate excel report based on the test scripts
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	public void initializeExcelReport() throws ParserConfigurationException, SAXException, IOException {
+		File reportFile = new File(Address_DataSheet_Constants.REP_INPUT_FILE); 
+		if(reportFile.exists()){
+			Reporter.log("reportFile exists");
+		}else{
+
+			XSSFSheet sheet,sheet1;
+			FileOutputStream writeXLOutput = null;
+			XSSFCellStyle TopHeaderContents = book.createCellStyle();
+			XSSFCellStyle TableHeader = book.createCellStyle();
+			XSSFCellStyle TableContentsOnLeft = book.createCellStyle();
+			XSSFCellStyle TableContentsOnRight = book.createCellStyle();
+			XSSFRow row;
+			//Header Column Names
+			XSSFCell cel_AppName;
+			XSSFCell cel_name;
+			XSSFCell cel_status;
+			XSSFCell cel_exp;
+			XSSFCell cel_ExecStartTime;
+			XSSFCell cel_ExecEndTime;
+			// Set the Font details for the entire sheet
+			XSSFFont defaultFont,HeaderFont;
+			String path = WebApp_GenericFunctions.class.getClassLoader().getResource("./").getPath();
+			path = path.replace("bin", "src");
+			rowNum=0;
+			HeaderFont = book.createFont();
+			HeaderFont.setFontHeightInPoints((short) 11);
+			HeaderFont.setFontName("Calibri");
+			HeaderFont.setColor(IndexedColors.WHITE.getIndex());
+			HeaderFont.setBold(true);
+			HeaderFont.setItalic(false);
+
+			defaultFont = book.createFont();
+			defaultFont.setFontHeightInPoints((short) 11);
+			defaultFont.setFontName("Calibri");
+			defaultFont.setColor(IndexedColors.BLACK.getIndex());
+			defaultFont.setBold(true);
+			defaultFont.setItalic(false);
+
+			// create style for cells in header row
+			TopHeaderContents.setFont(HeaderFont);
+			TopHeaderContents.setFillPattern(XSSFCellStyle.NO_FILL);
+			TopHeaderContents.setFillForegroundColor(HSSFColor.LIGHT_BLUE.index);
+			TopHeaderContents.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);		
+			// Set the border style for the workbook
+			TopHeaderContents.setAlignment(XSSFCellStyle.ALIGN_LEFT);
+
+			// create style for cells in header row
+			TableHeader.setFont(defaultFont);
+			TableHeader.setFillPattern(XSSFCellStyle.NO_FILL);
+			TableHeader.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
+			TableHeader.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
+			// Set the border style for the workbook
+			TableHeader.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+			TableHeader.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+			TableHeader.setBorderRight(XSSFCellStyle.BORDER_THIN);
+			TableHeader.setBorderTop(XSSFCellStyle.BORDER_THIN);
+			TableHeader.setAlignment(XSSFCellStyle.ALIGN_LEFT);
+
+
+			// create style for cells in table contents
+			TableContentsOnRight.setFillBackgroundColor(IndexedColors.BLACK.getIndex());
+			TableContentsOnRight.setFillPattern(XSSFCellStyle.NO_FILL);
+			TableContentsOnRight.setWrapText(false);
+			// Set the border style for the workbook
+			TableContentsOnRight.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnRight.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnRight.setBorderRight(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnRight.setBorderTop(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnRight.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+
+			// create style for cells in table contents
+			TableContentsOnLeft.setFillBackgroundColor(IndexedColors.BLACK.getIndex());
+			TableContentsOnLeft.setFillPattern(XSSFCellStyle.NO_FILL);
+			//		TableContentsOnLeft.setWrapText(false);
+			// Set the border style for the workbook
+			TableContentsOnLeft.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnLeft.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnLeft.setBorderRight(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnLeft.setBorderTop(XSSFCellStyle.BORDER_THIN);
+			TableContentsOnLeft.setAlignment(XSSFCellStyle.ALIGN_LEFT);
+
+			//Create worksheet
+			sheet1 = book.createSheet("Graphical_Summary");
+			row = sheet1.createRow(1);
+			XSSFCellStyle hiddenstyle = book.createCellStyle();
+			hiddenstyle.setHidden(true);
+
+			//Create worksheet
+			sheet = book.createSheet(sheetName);
+			book.setActiveSheet(1);
+			row = sheet.createRow(rowNum++);
+			//Header Column Names
+			cel_AppName = row.createCell(0);
+			cel_AppName.setCellValue("Automated Test Execution Report");
+			cel_AppName.setCellStyle(TopHeaderContents);
+
+			row = sheet.createRow(rowNum++);
+			cel_AppName = row.createCell(0);
+			cel_AppName.setCellValue("");
+
+			row = sheet.createRow(rowNum++);
+			cel_name = row.createCell(1);
+			cel_status = row.createCell(2);
+			cel_name.setCellValue("Number of Test cases passed");
+			cel_status.setCellFormula("COUNTIFS(C10:C103,\"PASSED\")");
+			cel_name.setCellStyle(TableContentsOnLeft);
+			cel_status.setCellStyle(TableContentsOnRight);
+
+			row = sheet.createRow(rowNum++);
+			cel_name = row.createCell(1);
+			cel_status = row.createCell(2);
+			cel_name.setCellValue("Number of Test cases failed");
+			cel_status.setCellFormula("COUNTIFS(C10:C103,\"FAILED\")");
+			cel_name.setCellStyle(TableContentsOnLeft);
+			cel_status.setCellStyle(TableContentsOnRight);
+
+			row = sheet.createRow(rowNum++);
+			cel_name = row.createCell(1);
+			cel_status = row.createCell(2);
+			cel_name.setCellValue("Number of Test cases Not Executed");
+			cel_status.setCellFormula("COUNTIFS(C10:C103,\"NOT EXECUTED\")");
+			cel_name.setCellStyle(TableContentsOnLeft);
+			cel_status.setCellStyle(TableContentsOnRight);
+
+			row = sheet.createRow(rowNum++);
+			cel_name = row.createCell(1);
+			cel_status = row.createCell(2);
+			cel_name.setCellValue("TOTAL");
+			cel_status.setCellFormula("SUM(C3:C5)");
+			cel_name.setCellStyle(TableContentsOnLeft);
+			cel_status.setCellStyle(TableContentsOnRight);
+
+			row = sheet.createRow(rowNum++);
+			cel_AppName = row.createCell(0);
+			cel_AppName.setCellValue("");
+
+			row = sheet.createRow(rowNum++);
+			//Header Column Names
+			cel_AppName = row.createCell(0);
+			cel_AppName.setCellValue("Test case level execution details");
+			cel_AppName.setCellStyle(TopHeaderContents);
+
+			row = sheet.createRow(rowNum++);
+			//Header Column Names
+			cel_AppName = row.createCell(0);
+			cel_name = row.createCell(1);
+			cel_status = row.createCell(2);
+			cel_ExecStartTime=row.createCell(3);
+			cel_ExecEndTime=row.createCell(4);
+			cel_exp = row.createCell(5);
+
+			// Set the Header names for the sheet
+			cel_AppName.setCellValue("Application Name");
+			cel_AppName.setCellStyle(TableHeader);
+			cel_name.setCellValue("Test Script Name");
+			cel_status.setCellValue("Execution Status");
+			cel_ExecStartTime.setCellValue("Execution Start Time");
+			cel_ExecEndTime.setCellValue("Execution End Time");
+			cel_exp.setCellValue("Comments");
+			cel_exp.setCellStyle(TableHeader);
+			// set style for the table header
+			cel_name.setCellStyle(TableHeader);
+			cel_status.setCellStyle(TableHeader);
+			cel_ExecStartTime.setCellStyle(TableHeader);
+			cel_ExecEndTime.setCellStyle(TableHeader);
+			// Auto size the column widths based on the names
+			sheet.autoSizeColumn(0);
+			sheet.autoSizeColumn(1);
+			sheet.autoSizeColumn(2);
+			sheet.autoSizeColumn(3);
+			sheet.autoSizeColumn(4);
+			sheet.autoSizeColumn(5);
+
+			writeXLOutput = new FileOutputStream(Address_DataSheet_Constants.REP_INPUT_FILE);
+			book.write(writeXLOutput);
+			writeXLOutput.close();
+			book.close();
+		}
+		CONSTANTS.Reportxls=new Xls_ReadWrite(Address_DataSheet_Constants.REP_INPUT_FILE);
 	}
 
 	/**
@@ -241,6 +452,8 @@ public class WebApp_GenericFunctions {
 			//Creating Xls_ReadWrite object.
 			CurrentRunningTCName=super.getClass().getSimpleName();
 			getCurrentlyLoggedInUser=System.getProperty("user.name");
+			CONSTANTS.sdf.setTimeZone(TimeZone.getTimeZone("EET"));
+			ExecutionStartTime=CONSTANTS.sdf.format(new Date());
 			GetApplicationName=CurrentRunningTCName.substring(0, CurrentRunningTCName.indexOf("_"));
 			RunOnBrowser=Browser;
 			//Load the ApplicationsHub Workbook into the credxls object
@@ -521,6 +734,7 @@ public class WebApp_GenericFunctions {
 	}	    		         
 
 	/**
+	/**
 	 * Capture the screenshot on error
 	 * @param testResult
 	 * @author saikiran.nataraja
@@ -528,14 +742,29 @@ public class WebApp_GenericFunctions {
 	 */
 	@AfterMethod 
 	public void takeScreenShotOnFailure(ITestResult testResult) throws Exception {
+		rowNum = CONSTANTS.Reportxls.findRowNumber(CurrentRunningTCName);
+		//Write to the Excel only if the test case name, Application Name does NOT exist in the excel
+		if(rowNum==0){
+			rowNum = CONSTANTS.Reportxls.getRowCount(sheetName);
+			CONSTANTS.Reportxls.setCellData(sheetName, "Test Script Name", rowNum, CurrentRunningTCName);
+			CONSTANTS.Reportxls.setCellData(sheetName, "Application Name", rowNum, GetApplicationName);
+		}
+		//If the test name already exists then assign the row at which test case name exists to row number
+		CONSTANTS.Reportxls.setCellData(sheetName, "Execution Start Time", rowNum, ExecutionStartTime);
 		if (testResult.getStatus() == ITestResult.FAILURE){ 
 			try{
+				System.out.println(" - FAILED.");
 				//Create Error Screenshot Directory if doesnot exists
 				File dir = new File(CONSTANTS.ScreenshotsPath+CONSTANTS.fs+GetApplicationName+CONSTANTS.fs);
+				dir.setWritable(true); //If SecurityManager.checkWrite(java.lang.String) method denies write access to the file.Hence made the directory writable
 				dir.mkdirs();
 				BufferedImage image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
-				File imagePath=new File(CONSTANTS.ScreenshotsPath+CONSTANTS.fs+GetApplicationName+CONSTANTS.fs+Captialize(RunOnBrowser)+"_"+CurrentRunningTCName +CONSTANTS.Dateformat +".jpg");
+				//Here the screenshot path is reduced to a maximum of 20 literals
+				File imagePath=new File(CONSTANTS.ScreenshotsPath+CONSTANTS.fs+GetApplicationName+CONSTANTS.fs+CONSTANTS.Dateformat+Captialize(RunOnBrowser)+"_"+CurrentRunningTCName.substring(0, Math.min(CurrentRunningTCName.length(), 20)) +".jpg");
+				imagePath.setWritable(true);
 				ImageIO.write(image, "JPG", imagePath);
+				CONSTANTS.Reportxls.setCellData(sheetName, "Execution Status", rowNum, "FAILED");
+				CONSTANTS.Reportxls.setCellData(sheetName, "Comments", rowNum, testResult.getThrowable().getMessage());
 				//Extent Reports take screenshot
 				test.log(LogStatus.FAIL, "Failure Stack Trace: "+ testResult.getThrowable().getMessage());
 				test.log(LogStatus.FAIL,"Snapshot below: " + test.addScreenCapture(imagePath.getAbsoluteFile().toString().replace(System.getProperty("user.dir")+CONSTANTS.fs+"ExtentReports"+CONSTANTS.fs, "")));			
@@ -545,10 +774,18 @@ public class WebApp_GenericFunctions {
 				//			e.printStackTrace();
 			}
 		}else if (testResult.getStatus() == ITestResult.SKIP) {
+			CONSTANTS.Reportxls.setCellData(sheetName, "Execution Status", rowNum, "NOT EXECUTED");
+			CONSTANTS.Reportxls.setCellData(sheetName, "Comments", rowNum, "Test skipped: " + testResult.getThrowable().getMessage());
+			System.out.println(" - SKIPPED.");
 			test.log(LogStatus.SKIP, "Test skipped: " + testResult.getThrowable().getMessage());
 		}else{
+			System.out.println(" - PASSED.");
+			CONSTANTS.Reportxls.setCellData(sheetName, "Execution Status", rowNum, "PASSED");
+			CONSTANTS.Reportxls.setCellData(sheetName, "Comments", rowNum, "");
 			//Test is PASSED/INFO/
 		}
+		ExecutionEndTime=CONSTANTS.sdf.format(new Date());
+		CONSTANTS.Reportxls.setCellData(sheetName, "Execution End Time", rowNum, ExecutionEndTime);
 	}
 
 	/**
@@ -646,6 +883,7 @@ public class WebApp_GenericFunctions {
 	@AfterSuite
 	public void tearSuite(){
 		try {
+			CONSTANTS.Reportxls = null;
 			Runtime rt = Runtime.getRuntime();
 			rt.exec("taskkill /F /IM WebDriver_IEDriverServer.exe");
 			rt.exec("taskkill /F /IM WebDriver_chromedriver.exe");
